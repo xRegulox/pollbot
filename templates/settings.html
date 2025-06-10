@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Regulo PollBot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">User Settings</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Account Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Username:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ current_user.username }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Email:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ current_user.email }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Account Type:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {% if current_user.is_admin %}
+                                <span class="badge bg-primary">Administrator</span>
+                            {% else %}
+                                <span class="badge bg-secondary">User</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Created:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ current_user.created_at.strftime('%Y-%m-%d') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Change Password</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('settings') }}">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required
+                                   minlength="6" pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$"
+                                   title="Password must be at least 6 characters and include at least one letter and one number">
+                            <div class="form-text">
+                                Password must be at least 6 characters and include at least one letter and one number.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-key"></i> Change Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Dashboard Preferences</h6>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted">
+                        These settings control your personal dashboard experience.
+                    </p>
+                    
+                    <form id="dashboard-preferences-form">
+                        <div class="mb-3 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_animations" checked>
+                            <label class="form-check-label" for="enable_animations">Enable animations</label>
+                        </div>
+                        
+                        <div class="mb-3 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="show_tooltips" checked>
+                            <label class="form-check-label" for="show_tooltips">Show tooltips</label>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="default_chart_type" class="form-label">Default chart type</label>
+                            <select class="form-select" id="default_chart_type">
+                                <option value="bar" selected>Bar chart</option>
+                                <option value="pie">Pie chart</option>
+                                <option value="line">Line chart</option>
+                            </select>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            These preferences are saved in your browser and do not affect other users.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" id="save-preferences" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save Preferences
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Security & Privacy</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6>Session Information</h6>
+                        <p class="card-text text-muted">
+                            Your current session details:
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><strong>IP Address:</strong> <span id="user-ip">Loading...</span></li>
+                            <li><strong>Browser:</strong> <span id="user-browser">{{ request.user_agent.browser }}</span></li>
+                            <li><strong>Last Activity:</strong> <span id="last-activity">Just now</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                            <i class="bi bi-box-arrow-right"></i> Sign Out of All Devices
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password confirmation validation
+        const newPassword = document.getElementById('new_password');
+        const confirmPassword = document.getElementById('confirm_password');
+        
+        function validatePassword() {
+            if (newPassword.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity("Passwords don't match");
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+        }
+        
+        if (newPassword && confirmPassword) {
+            newPassword.addEventListener('change', validatePassword);
+            confirmPassword.addEventListener('keyup', validatePassword);
+        }
+        
+        // Dashboard preferences
+        const preferencesForm = document.getElementById('dashboard-preferences-form');
+        const savePreferencesBtn = document.getElementById('save-preferences');
+        
+        if (preferencesForm && savePreferencesBtn) {
+            // Load saved preferences
+            const savedPreferences = JSON.parse(localStorage.getItem('dashboardPreferences') || '{}');
+            
+            if (savedPreferences.enableAnimations !== undefined) {
+                document.getElementById('enable_animations').checked = savedPreferences.enableAnimations;
+            }
+            
+            if (savedPreferences.showTooltips !== undefined) {
+                document.getElementById('show_tooltips').checked = savedPreferences.showTooltips;
+            }
+            
+            if (savedPreferences.defaultChartType) {
+                document.getElementById('default_chart_type').value = savedPreferences.defaultChartType;
+            }
+            
+            // Save preferences
+            savePreferencesBtn.addEventListener('click', function() {
+                const preferences = {
+                    enableAnimations: document.getElementById('enable_animations').checked,
+                    showTooltips: document.getElementById('show_tooltips').checked,
+                    defaultChartType: document.getElementById('default_chart_type').value
+                };
+                
+                localStorage.setItem('dashboardPreferences', JSON.stringify(preferences));
+                
+                // Show success message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alert.innerHTML = `
+                    Preferences saved successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                preferencesForm.appendChild(alert);
+                
+                // Auto-dismiss after 3 seconds
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 3000);
+            });
+        }
+        
+        // Get user IP for display
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('user-ip').textContent = data.ip;
+            })
+            .catch(() => {
+                document.getElementById('user-ip').textContent = 'Not available';
+            });
+    });
+</script>
+{% endblock %}

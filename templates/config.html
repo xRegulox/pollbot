@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Bot Configuration - Regulo PollBot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Bot Configuration</h1>
+    </div>
+    
+    <div class="alert alert-info">
+        <p>You can configure your bot settings here, including your Discord bot token and preferences for how the bot operates.</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Discord Bot Settings</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('bot_config') }}">
+                        <div class="mb-3">
+                            <label for="token" class="form-label">Discord Bot Token</label>
+                            <input type="password" class="form-control" id="token" name="token" 
+                                value="{{ config.token if config and config.token else '' }}" required>
+                            <div class="form-text">
+                                <small>You can get this from the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a></small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="theme" class="form-label">Theme</label>
+                            <select class="form-select" id="theme" name="theme">
+                                <option value="dark" {{ 'selected' if config and config.theme == 'dark' else '' }}>Dark</option>
+                                <option value="light" {{ 'selected' if config and config.theme == 'light' else '' }}>Light</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="backup_frequency" class="form-label">Backup Frequency</label>
+                            <select class="form-select" id="backup_frequency" name="backup_frequency">
+                                <option value="daily" {{ 'selected' if config and config.backup_frequency == 'daily' else '' }}>Daily</option>
+                                <option value="weekly" {{ 'selected' if config and config.backup_frequency == 'weekly' else '' }}>Weekly</option>
+                                <option value="monthly" {{ 'selected' if config and config.backup_frequency == 'monthly' else '' }}>Monthly</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Poll{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Poll
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="editPollForm">
+                        <!-- Question -->
+                        <div class="mb-3">
+                            <label for="question" class="form-label">Poll Question</label>
+                            <input type="text" class="form-control" id="question" name="question" 
+                                   value="{{ poll.question }}" required maxlength="1000">
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description (Optional)</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" maxlength="2000">{{ poll.description or '' }}</textarea>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="mb-3">
+                            <label class="form-label">Poll Options</label>
+                            <div id="options-container">
+                                {% set options = poll.get_options() %}
+                                {% for option in options %}
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">{{ loop.index }}</span>
+                                    <input type="text" class="form-control" name="option_{{ loop.index }}" 
+                                           value="{{ option }}" placeholder="Enter option {{ loop.index }}" 
+                                           {% if loop.index <= 2 %}required{% endif %}>
+                                    {% if loop.index > 2 %}
+                                    <button class="btn btn-outline-danger" type="button" onclick="removeOption(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Add empty options if less than 4 -->
+                                {% for i in range(options|length + 1, 5) %}
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">{{ i }}</span>
+                                    <input type="text" class="form-control" name="option_{{ i }}" 
+                                           placeholder="Enter option {{ i }}">
+                                    <button class="btn btn-outline-danger" type="button" onclick="removeOption(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addOption()">
+                                <i class="fas fa-plus me-1"></i>Add Option
+                            </button>
+                        </div>
+
+                        <!-- Poll Settings -->
+                        <div class="mb-3">
+                            <label class="form-label">Poll Settings</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_anonymous" name="is_anonymous"
+                                       {% if poll.is_anonymous %}checked{% endif %}>
+                                <label class="form-check-label" for="is_anonymous">
+                                    Anonymous voting (user reactions are hidden)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="allow_multiple" name="allow_multiple"
+                                       {% if poll.allow_multiple %}checked{% endif %}>
+                                <label class="form-check-label" for="allow_multiple">
+                                    Allow multiple votes per user
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="show_live_results" name="show_live_results"
+                                       {% if poll.show_live_results %}checked{% endif %}>
+                                <label class="form-check-label" for="show_live_results">
+                                    Show live results
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Poll Preview -->
+                        <div class="mb-4">
+                            <h5>Poll Preview</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div id="poll-preview">
+                                        <h6 id="preview-question">{{ poll.question }}</h6>
+                                        <p id="preview-description" class="text-muted">{{ poll.description or 'Description (optional)' }}</p>
+                                        <div id="preview-options">
+                                            {% for option in options %}
+                                            <div class="preview-option">
+                                                <span class="me-2">{{ "🇦🇧🇨🇩🇪🇫🇬🇭🇮🇯"[loop.index0] }}</span>{{ option }}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <small class="text-muted mt-2 d-block" id="preview-settings">
+                                            {% if poll.allow_multiple %}Multiple votes allowed{% else %}One vote per person{% endif %}
+                                            {% if poll.is_anonymous %} • Votes are anonymous{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update Poll
+                            </button>
+                            <a href="{{ url_for('manage_polls') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let optionCount = {{ options|length }};
+
+function addOption() {
+    if (optionCount >= 10) {
+        alert('Maximum 10 options allowed');
+        return;
+    }
+    
+    optionCount++;
+    const container = document.getElementById('options-container');
+    const newOption = document.createElement('div');
+    newOption.className = 'input-group mb-2';
+    newOption.innerHTML = `
+        <span class="input-group-text">${optionCount}</span>
+        <input type="text" class="form-control" name="option_${optionCount}" 
+               placeholder="Enter option ${optionCount}">
+        <button class="btn btn-outline-danger" type="button" onclick="removeOption(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(newOption);
+    updatePreview();
+}
+
+function removeOption(button) {
+    button.closest('.input-group').remove();
+    updatePreview();
+}
+
+function updatePreview() {
+    const question = document.getElementById('question').value || 'Poll Question';
+    const description = document.getElementById('description').value || 'Description (optional)';
+    const isAnonymous = document.getElementById('is_anonymous').checked;
+    const allowMultiple = document.getElementById('allow_multiple').checked;
+    
+    document.getElementById('preview-question').textContent = question;
+    document.getElementById('preview-description').textContent = description;
+    
+    // Update options preview
+    const optionsContainer = document.getElementById('preview-options');
+    optionsContainer.innerHTML = '';
+    const emojis = '🇦🇧🇨🇩🇪🇫🇬🇭🇮🇯';
+    
+    document.querySelectorAll('[name^="option_"]').forEach((input, index) => {
+        if (input.value.trim()) {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'preview-option';
+            optionDiv.innerHTML = `<span class="me-2">${emojis[index]}</span>${input.value}`;
+            optionsContainer.appendChild(optionDiv);
+        }
+    });
+    
+    // Update settings preview
+    let settingsText = allowMultiple ? 'Multiple votes allowed' : 'One vote per person';
+    if (isAnonymous) settingsText += ' • Votes are anonymous';
+    document.getElementById('preview-settings').textContent = settingsText;
+}
+
+// Add event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('question').addEventListener('input', updatePreview);
+    document.getElementById('description').addEventListener('input', updatePreview);
+    document.getElementById('is_anonymous').addEventListener('change', updatePreview);
+    document.getElementById('allow_multiple').addEventListener('change', updatePreview);
+    
+    document.querySelectorAll('[name^="option_"]').forEach(input => {
+        input.addEventListener('input', updatePreview);
+    });
+});
+</script>
+{% endblock %}

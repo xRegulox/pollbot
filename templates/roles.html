@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Role Management - Regulo PollBot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Role-Based Voting Power</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Configure Role Weights</h6>
+                    <div>
+                        <form class="d-inline" method="get">
+                            <div class="input-group">
+                                <select class="form-select" id="server_id" name="server_id" onchange="this.form.submit()">
+                                    {% for server in servers %}
+                                        <option value="{{ server.id }}" {% if server.id|string == current_server_id|string %}selected{% endif %}>
+                                            {{ server.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if roles %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Assign voting weights to roles. Users with higher weighted roles have more influence in polls.
+                            <br>Default weight is 1. Higher numbers = more voting power.
+                        </div>
+                        
+                        <form method="post" action="{{ url_for('update_role_weights') }}">
+                            <input type="hidden" name="server_id" value="{{ current_server_id }}">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px">#</th>
+                                            <th>Role Name</th>
+                                            <th style="width: 200px">Color</th>
+                                            <th style="width: 200px">Vote Weight</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for role in roles %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td>{{ role.name }}</td>
+                                                <td>
+                                                    {% if role.color %}
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="rounded-circle me-2" style="width: 20px; height: 20px; background-color: #{{ '%06x' % role.color }}"></div>
+                                                            <code>#{{ '%06x' % role.color }}</code>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">No color</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" name="weight_{{ role.id }}" 
+                                                            value="{{ role.vote_weight }}" min="0" max="10" required>
+                                                        <span class="input-group-text">points</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-3 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save"></i> Save Role Weights
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            {% if servers %}
+                                No roles found for the selected server. Please make sure the bot has been added to the server and has permission to view roles.
+                            {% else %}
+                                No Discord servers found. Please add the bot to at least one server to configure role weights.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">How Role Weights Work</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h5>What are vote weights?</h5>
+                            <p>Vote weights allow you to give more voting power to specific roles in your server. For example, you might want moderators' votes to count more than regular members.</p>
+                            
+                            <h5>How does it affect polls?</h5>
+                            <p>When a user votes in a poll, the system checks their highest weighted role and assigns that weight to their vote. For example, if someone has the "Moderator" role with a weight of 3, their vote counts as 3 votes.</p>
+                        </div>
+                        
+                        <div class="col-lg-6">
+                            <h5>Example scenarios:</h5>
+                            <ul>
+                                <li><strong>Equal voting:</strong> Set all roles to weight 1 (default)</li>
+                                <li><strong>Staff-weighted:</strong> Regular members (1), Moderators (2), Admins (3)</li>
+                                <li><strong>Seniority-based:</strong> New members (1), Members (2), Veterans (3)</li>
+                                <li><strong>VIP system:</strong> Members (1), Subscribers (2), VIP (3), Premium (5)</li>
+                            </ul>
+                            
+                            <div class="alert alert-warning">
+                                <strong>Important:</strong> Users with multiple roles get the highest weight from all their roles, not the sum of all weights.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

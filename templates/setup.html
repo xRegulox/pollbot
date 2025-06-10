@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - Regulo PollBot{% endblock %}
+
+{% block auth_content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <h1 class="h3">Regulo PollBot Setup</h1>
+                    <p class="text-muted">Complete the initial setup to get started</p>
+                </div>
+                
+                <form method="post" action="{{ url_for('setup') }}">
+                    <div class="mb-4">
+                        <h5>Discord Bot Configuration</h5>
+                        <div class="mb-3">
+                            <label for="token" class="form-label">Discord Bot Token</label>
+                            <input type="password" class="form-control" id="token" name="token" 
+                                placeholder="Enter your Discord bot token" required>
+                            <div class="form-text">
+                                <small>You can get this from the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a></small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Dashboard Access</h5>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Admin Password</label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                placeholder="Create a password for the dashboard" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                placeholder="Confirm your password" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Complete Setup</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Regulo PollBot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Dashboard</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('create_poll_route') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> New Poll
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="bi bi-bar-chart-fill fs-1 text-primary"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-xs text-uppercase mb-1">Total Polls</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ total_polls }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="bi bi-activity fs-1 text-success"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-xs text-uppercase mb-1">Active Polls</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ active_polls }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="bi bi-check2-circle fs-1 text-info"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-xs text-uppercase mb-1">Total Votes</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ total_votes }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="bi bi-discord fs-1 text-warning"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-xs text-uppercase mb-1">Discord Servers</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ total_servers }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mb-4">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold">Activity Overview</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Recent Polls</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_polls %}
+                        <div class="list-group">
+                            {% for poll in recent_polls %}
+                                <a href="{{ url_for('view_poll', poll_id=poll.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1 text-truncate">{{ poll.question }}</h5>
+                                        <small class="text-muted">
+                                            {% if poll.status == 'active' %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% elif poll.status == 'draft' %}
+                                                <span class="badge bg-secondary">Draft</span>
+                                            {% elif poll.status == 'closed' %}
+                                                <span class="badge bg-danger">Closed</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <small class="text-muted">Created: {{ poll.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No polls created yet</p>
+                            <a href="{{ url_for('create_poll_route') }}" class="btn btn-sm btn-primary mt-3">Create Your First Poll</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parse JSON data
+        const pollsData = {{ polls_by_day|safe }};
+        const votesData = {{ votes_by_day|safe }};
+        
+        // Extract labels and values
+        const labels = pollsData.map(item => item[0]);
+        const pollValues = pollsData.map(item => item[1]);
+        const voteValues = votesData.map(item => item[1]);
+        
+        // Create chart
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        const activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Polls Created',
+                        data: pollValues,
+                        borderColor: '#5865F2',
+                        backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Votes Cast',
+                        data: voteValues,
+                        borderColor: '#57F287',
+                        backgroundColor: 'rgba(87, 242, 135, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Poll Activity (Last 7 Days)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

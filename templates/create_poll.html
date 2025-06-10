@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+{% block title %}Create Poll - Regulo PollBot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Create New Poll</h1>
+    </div>
+    
+    <form method="post" action="{{ url_for('create_poll_route') }}">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Poll Content Card -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold">Poll Content</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="question" class="form-label">Question</label>
+                            <input type="text" class="form-control" id="question" name="question" 
+                                placeholder="Enter your poll question" required maxlength="1000">
+                            <div class="form-text">Max 1000 characters</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description (Optional)</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                placeholder="Add additional context or instructions" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Answer Options</label>
+                            <div id="options-container">
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">1</span>
+                                    <input type="text" class="form-control" name="option_1" 
+                                        placeholder="Option 1" required maxlength="1000">
+                                </div>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">2</span>
+                                    <input type="text" class="form-control" name="option_2" 
+                                        placeholder="Option 2" required maxlength="1000">
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-end mt-2">
+                                <button type="button" id="add-option" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-plus-circle"></i> Add Option
+                                </button>
+                            </div>
+                            <div class="form-text">Min 2, Max 10 options</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Poll Settings Card -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold">Poll Settings</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="allow_multiple" name="allow_multiple">
+                                    <label class="form-check-label" for="allow_multiple">Allow multiple votes</label>
+                                    <div class="form-text">Users can vote for multiple options</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Max votes setting (only visible when multiple votes is enabled) -->
+                            <div class="col-md-6" id="max_votes_container" style="display: none;">
+                                <div class="mb-3">
+                                    <label class="form-label" for="max_votes">Maximum votes per user</label>
+                                    <input type="number" class="form-control" id="max_votes" name="max_votes" min="0" value="0">
+                                    <div class="form-text">Set to 0 for unlimited votes, or specify exact maximum</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="allow_vote_change" name="allow_vote_change" checked>
+                                    <label class="form-check-label" for="allow_vote_change">Allow vote changes</label>
+                                    <div class="form-text">Users can change their votes after casting</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_anonymous" name="is_anonymous">
+                                    <label class="form-check-label" for="is_anonymous">Anonymous voting</label>
+                                    <div class="form-text">Hide who voted for what option</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="show_live_results" name="show_live_results" checked>
+                                    <label class="form-check-label" for="show_live_results">Show live results</label>
+                                    <div class="form-text">Update poll with current results</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Poll Duration</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="expiration_type" id="no_expiration" value="none" checked>
+                                <label class="form-check-label" for="no_expiration">
+                                    No expiration (manual close)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="expiration_type" id="duration_expiration" value="duration">
+                                <label class="form-check-label" for="duration_expiration">
+                                    Duration-based
+                                </label>
+                            </div>
+                            <div class="row ms-4 mb-2" id="duration-inputs" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="duration_value" name="duration_value" min="1" value="1">
+                                        <select class="form-select" id="duration_unit" name="duration_unit">
+                                            <option value="minutes">Minutes</option>
+                                            <option value="hours">Hours</option>
+                                            <option value="days" selected>Days</option>
+                                            <option value="weeks">Weeks</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="expiration_type" id="datetime_expiration" value="datetime">
+                                <label class="form-check-label" for="datetime_expiration">
+                                    Specific date and time
+                                </label>
+                            </div>
+                            <div class="row ms-4" id="datetime-inputs" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <input type="date" class="form-control" id="expiration_date" name="expiration_date">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <input type="time" class="form-control" id="expiration_time" name="expiration_time">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Scheduling</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="schedule_type" id="post_now" value="now" checked>
+                                <label class="form-check-label" for="post_now">
+                                    Post immediately
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="schedule_type" id="post_scheduled" value="scheduled">
+                                <label class="form-check-label" for="post_scheduled">
+                                    Schedule for later
+                                </label>
+                            </div>
+                            <div class="row ms-4" id="schedule-inputs" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <input type="date" class="form-control" id="schedule_date" name="schedule_date">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <input type="time" class="form-control" id="schedule_time" name="schedule_time">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Server & Channel Selection Card -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold">Target Discord Channel</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if servers %}
+                            <div class="mb-3">
+                                <label for="server_id" class="form-label">Discord Server</label>
+                                <select class="form-select" id="server_id" name="server_id">
+                                    <option value="" selected>Use default server</option>
+                                    {% for server in servers %}
+                                        <option value="{{ server.id }}">{{ server.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Leave blank to use your configured default server</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="channel_id" class="form-label">Channel</label>
+                                <select class="form-select" id="channel_id" name="channel_id">
+                                    <option value="" selected>Use default channel</option>
+                                </select>
+                                <div class="form-text">Leave blank to use your configured default channel</div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                No Discord servers found. Make sure the bot is added to at least one server.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Preview Card -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold">Poll Preview</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="poll-preview" class="border p-3 rounded" style="background-color: #36393f; max-width: 100%;">
+                            <div class="fw-bold fs-5 mb-1" id="preview-question">Your question will appear here</div>
+                            <div class="text-muted mb-3" id="preview-description">Description (optional)</div>
+                            <div id="preview-options" class="mb-3">
+                                <div class="mb-1">1️⃣ Option 1</div>
+                                <div class="mb-1">2️⃣ Option 2</div>
+                            </div>
+                            <div class="text-muted small">One vote per person • Closes: Never</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">Create Poll</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date and time pickers with current date/time
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+        
+        // Format dates for input fields
+        const formatDate = (date) => {
+            return date.toISOString().split('T')[0];
+        };
+        
+        const formatTime = (date) => {
+            return date.toTimeString().substring(0, 5);
+        };
+        
+        // Set default values for date and time pickers
+        document.getElementById('expiration_date').value = formatDate(tomorrow);
+        document.getElementById('expiration_time').value = formatTime(now);
+        document.getElementById('schedule_date').value = formatDate(now);
+        document.getElementById('schedule_time').value = formatTime(now);
+        
+        // Option management
+        const optionsContainer = document.getElementById('options-container');
+        const addOptionBtn = document.getElementById('add-option');
+        let optionCount = 2;
+        
+        addOptionBtn.addEventListener('click', function() {
+            optionCount++;
+            if (optionCount <= 10) {
+                const newOption = document.createElement('div');
+                newOption.className = 'input-group mb-2';
+                newOption.innerHTML = `
+                    <span class="input-group-text">${optionCount}</span>
+                    <input type="text" class="form-control" name="option_${optionCount}" 
+                        placeholder="Option ${optionCount}" maxlength="1000">
+                    <button type="button" class="btn btn-outline-danger remove-option">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                `;
+                optionsContainer.appendChild(newOption);
+                
+                // Update preview
+                updatePreview();
+                
+                // If we hit the max, disable the add button
+                if (optionCount >= 10) {
+                    addOptionBtn.disabled = true;
+                }
+            }
+        });
+        
+        // Remove option handler
+        optionsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-option') || e.target.parentElement.classList.contains('remove-option')) {
+                const button = e.target.classList.contains('remove-option') ? e.target : e.target.parentElement;
+                button.closest('.input-group').remove();
+                
+                // Re-number the options
+                const options = optionsContainer.querySelectorAll('.input-group');
+                options.forEach((option, index) => {
+                    const span = option.querySelector('.input-group-text');
+                    const input = option.querySelector('input');
+                    span.textContent = index + 1;
+                    input.name = `option_${index + 1}`;
+                    input.placeholder = `Option ${index + 1}`;
+                });
+                
+                optionCount = options.length;
+                addOptionBtn.disabled = false;
+                
+                // Update preview
+                updatePreview();
+            }
+        });
+        
+        // Show/hide expiration inputs based on selection
+        const noExpiration = document.getElementById('no_expiration');
+        const durationExpiration = document.getElementById('duration_expiration');
+        const datetimeExpiration = document.getElementById('datetime_expiration');
+        const durationInputs = document.getElementById('duration-inputs');
+        const datetimeInputs = document.getElementById('datetime-inputs');
+        
+        noExpiration.addEventListener('change', function() {
+            if (this.checked) {
+                durationInputs.style.display = 'none';
+                datetimeInputs.style.display = 'none';
+                updatePreview();
+            }
+        });
+        
+        durationExpiration.addEventListener('change', function() {
+            if (this.checked) {
+                durationInputs.style.display = 'flex';
+                datetimeInputs.style.display = 'none';
+                updatePreview();
+            }
+        });
+        
+        datetimeExpiration.addEventListener('change', function() {
+            if (this.checked) {
+                durationInputs.style.display = 'none';
+                datetimeInputs.style.display = 'flex';
+                updatePreview();
+            }
+        });
+        
+        // Show/hide scheduling inputs
+        const postNow = document.getElementById('post_now');
+        const postScheduled = document.getElementById('post_scheduled');
+        const scheduleInputs = document.getElementById('schedule-inputs');
+        
+        postNow.addEventListener('change', function() {
+            if (this.checked) {
+                scheduleInputs.style.display = 'none';
+            }
+        });
+        
+        postScheduled.addEventListener('change', function() {
+            if (this.checked) {
+                scheduleInputs.style.display = 'flex';
+            }
+        });
+        
+        // Load channels when server is selected
+        const serverSelect = document.getElementById('server_id');
+        const channelSelect = document.getElementById('channel_id');
+        
+        serverSelect.addEventListener('change', function() {
+            const serverId = this.value;
+            if (serverId) {
+                // Enable channel select
+                channelSelect.disabled = false;
+                channelSelect.innerHTML = '<option value="" selected disabled>Loading channels...</option>';
+                
+                // Fetch channels for selected server
+                fetch(`/get_channels/${serverId}`)
+                    .then(response => response.json())
+                    .then(channels => {
+                        channelSelect.innerHTML = '<option value="" selected disabled>Select a channel</option>';
+                        channels.forEach(channel => {
+                            const option = document.createElement('option');
+                            option.value = channel.id;
+                            option.textContent = `#${channel.name}`;
+                            channelSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading channels:', error);
+                        channelSelect.innerHTML = '<option value="" selected disabled>Error loading channels</option>';
+                    });
+            } else {
+                channelSelect.disabled = true;
+                channelSelect.innerHTML = '<option value="" selected disabled>Select a server first</option>';
+            }
+        });
+        
+        // Preview update
+        const questionInput = document.getElementById('question');
+        const descriptionInput = document.getElementById('description');
+        const allowMultipleCheck = document.getElementById('allow_multiple');
+        const isAnonymousCheck = document.getElementById('is_anonymous');
+        
+        const previewQuestion = document.getElementById('preview-question');
+        const previewDescription = document.getElementById('preview-description');
+        const previewOptions = document.getElementById('preview-options');
+        
+        // Duration inputs for preview
+        const durationValue = document.getElementById('duration_value');
+        const durationUnit = document.getElementById('duration_unit');
+        const expirationDate = document.getElementById('expiration_date');
+        const expirationTime = document.getElementById('expiration_time');
+        
+        function updatePreview() {
+            // Update question and description
+            previewQuestion.textContent = questionInput.value || 'Your question will appear here';
+            
+            if (descriptionInput.value) {
+                previewDescription.textContent = descriptionInput.value;
+                previewDescription.style.display = 'block';
+            } else {
+                previewDescription.textContent = 'Description (optional)';
+                previewDescription.style.display = 'block';
+            }
+            
+            // Update options
+            let optionsHTML = '';
+            const emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+            
+            const optionInputs = optionsContainer.querySelectorAll('input[type="text"]');
+            optionInputs.forEach((input, index) => {
+                optionsHTML += `<div class="mb-1">${emojis[index]} ${input.value || `Option ${index + 1}`}</div>`;
+            });
+            
+            previewOptions.innerHTML = optionsHTML;
+            
+            // Update footer
+            let footerText = [];
+            
+            if (allowMultipleCheck.checked) {
+                footerText.push('Multiple votes allowed');
+            } else {
+                footerText.push('One vote per person');
+            }
+            
+            if (isAnonymousCheck.checked) {
+                footerText.push('Votes are anonymous');
+            }
+            
+            // Add expiration info
+            if (noExpiration.checked) {
+                footerText.push('Closes: Never');
+            } else if (durationExpiration.checked) {
+                const value = durationValue.value || 1;
+                const unit = durationUnit.value || 'days';
+                footerText.push(`Closes: After ${value} ${unit}`);
+            } else if (datetimeExpiration.checked) {
+                const date = expirationDate.value;
+                const time = expirationTime.value;
+                if (date && time) {
+                    footerText.push(`Closes: ${date} ${time}`);
+                } else {
+                    footerText.push('Closes: (set date/time)');
+                }
+            }
+            
+            document.querySelector('#poll-preview .text-muted.small').textContent = footerText.join(' • ');
+        }
+        
+        // Add event listeners for preview updates
+        questionInput.addEventListener('input', updatePreview);
+        descriptionInput.addEventListener('input', updatePreview);
+        allowMultipleCheck.addEventListener('change', updatePreview);
+        isAnonymousCheck.addEventListener('change', updatePreview);
+        
+        // Duration inputs for expiration
+        durationValue.addEventListener('input', updatePreview);
+        durationUnit.addEventListener('change', updatePreview);
+        expirationDate.addEventListener('input', updatePreview);
+        expirationTime.addEventListener('input', updatePreview);
+        
+        // Initial preview update
+        updatePreview();
+    });
+</script>
+
+<!-- Vote Options Script -->
+<script src="{{ url_for('static', filename='js/vote-options.js') }}"></script>
+{% endblock %}
